@@ -1,13 +1,29 @@
 import { BlobServiceClient, ContainerClient, StorageSharedKeyCredential, BlobSASPermissions, generateBlobSASQueryParameters } from "@azure/storage-blob";
 
-const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING || "";
-const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+
+const getBlobServiceClient = (): BlobServiceClient => {
+  if (AZURE_STORAGE_CONNECTION_STRING) {
+    return BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
+  }
+
+  const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
+  const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
+
+  if (!accountName || !accountKey) {
+    throw new Error("Azure Storage connection string or account credentials are missing");
+  }
+
+  const credential = new StorageSharedKeyCredential(accountName, accountKey);
+  const url = `https://${accountName}.blob.core.windows.net`;
+  return new BlobServiceClient(url, credential);
+};
 
 /**
  * Get the Container Client
  */
 const getContainerClient = (containerName: string): ContainerClient => {
-  return blobServiceClient.getContainerClient(containerName);
+  return getBlobServiceClient().getContainerClient(containerName);
 };
 
 /**
