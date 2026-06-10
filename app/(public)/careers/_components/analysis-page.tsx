@@ -59,8 +59,9 @@ export const AnalysisContent = ({ jobId }: AnalysisContentProps) => {
       try {
         setAnalysisData("");
 
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
         const response = await fetch(
-          "http://localhost:8000/analysis/candidate",
+          `${backendUrl}/analysis/candidate`,
           {
             method: "POST",
             headers: {

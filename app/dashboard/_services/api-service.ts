@@ -198,8 +198,9 @@ class ApiService {
     }
 
     async streamCandidateAnalysis(resumeId: string, jdId: string, onChunk: (chunk: string) => void): Promise<void> {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
         const response = await fetch(
-            "http://localhost:8000/analysis/hr",
+            `${backendUrl}/analysis/hr`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
