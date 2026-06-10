@@ -1,5 +1,5 @@
 import { useAtom, useSetAtom } from "jotai";
-import { useState, useMemo } from "react";
+import { useCallback, useState, useMemo } from "react";
 import { filteredApplicationsAtom, applicationsAtom } from "@/store/application-atom";
 import { Application } from "@/types/dashboard";
 import { getStatusColor, getSimilarityInfo, formatDate } from "@/app/dashboard/_components/helper-items";
@@ -57,140 +57,14 @@ export const ApplicationsTableView = ({
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [isEmailSheetOpen, setIsEmailSheetOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [editType, setEditType] = useState<'email' | 'phone'>('email');
   const [editValue, setEditValue] = useState('');
   const [applicationToEdit, setApplicationToEdit] = useState<Application | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  // Add new state to track the selected job title
   const [selectedJobTitle, setSelectedJobTitle] = useState<string | undefined>(undefined);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  // Track generated columns
-  // const [columns, setColumns] = useState<ColumnDef<Application, unknown>[]>([]);
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  // Function to create base columns (without selection)
-  const createBaseColumns = (): ColumnDef<Application, unknown>[] => [
-    {
-      accessorKey: "candidate_name",
-      header: "Candidate",
-      enableSorting: true,
-      enableColumnFilter: true,
-      cell: ({ row }) => {
-        const application = row.original;
-        return (
-          <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9">
-              <AvatarFallback>
-                {application.candidate_name
-                  ?.split(' ')
-                  .map(n => n[0])
-                  .join('')
-                  .slice(0, 2)
-                  .toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium">{application.candidate_name}</p>
-              <div className="flex flex-col gap-1 mt-1">
-                {renderContactInfo(application, 'email')}
-              </div>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "job_title",
-      header: "Applied For",
-      enableSorting: true,
-      enableColumnFilter: true,
-      cell: ({ row }) => {
-        const application = row.original;
-        return (
-          <div className="hidden md:table-cell !whitespace-break-spaces">
-            <span className="">{application.job_title}</span>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "source",
-      header: "Source",
-      enableSorting: true,
-      enableColumnFilter: true,
-      cell: ({ row }) => {
-        const application = row.original;
-        return (
-          <div className="hidden sm:table-cell">
-            {application.source ? application.source : "N/A"}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "applied_date",
-      header: "Applied Date",
-      enableSorting: true,
-      enableColumnFilter: true,
-      cell: ({ row }) => {
-        const application = row.original;
-        return (
-          <div className="hidden sm:flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-500" />
-            {formatDate(application.applied_date)}
-          </div>
-        );
-      },
-      sortingFn: "datetime",
-    },
-    {
-      accessorKey: "similarity",
-      header: "Match",
-      enableSorting: true,
-      enableColumnFilter: true,
-      cell: ({ row }) => {
-        const application = row.original;
-        return (
-          <div className="hidden sm:block">
-            {renderSimilarityInfo(application)}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      enableSorting: false,
-      enableColumnFilter: true,
-      cell: ({ row }) => <StatusBadge application={row.original} />,
-    },
-    {
-      id: "actions",
-      header: () => <div className="text-right">Actions</div>,
-      enableSorting: false,
-      enableColumnFilter: false,
-      cell: ({ row }) => {
-        const application = row.original;
-
-        return (
-          <div className="text-center" onClick={(e) => e.stopPropagation()}>
-            {renderActionMenu(application)}
-          </div>
-        );
-      },
-    },
-  ];
-
-  // Update columns when selectedJobTitle changes
-  const columns = useMemo<ColumnDef<Application, unknown>[]>(() => {
-    if (selectedJobTitle && selectedJobTitle !== "_all") {
-      return [
-        createSelectionColumn<Application>(),
-        ...createBaseColumns(),
-      ];
-    }
-    return createBaseColumns();
-  }, [selectedJobTitle]);
 
 
   const handleUpdateStatus = (id: string) => {
@@ -491,6 +365,140 @@ export const ApplicationsTableView = ({
       </div>
     );
   };
+
+  // Function to create base columns (without selection)
+  const createBaseColumns = useCallback((): ColumnDef<Application, unknown>[] => [
+    {
+      accessorKey: "candidate_name",
+      header: "Candidate",
+      enableSorting: true,
+      enableColumnFilter: true,
+      cell: ({ row }) => {
+        const application = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9">
+              <AvatarFallback>
+                {application.candidate_name
+                  ?.split(' ')
+                  .map(n => n[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium">{application.candidate_name}</p>
+              <div className="flex flex-col gap-1 mt-1">
+                {renderContactInfo(application, 'email')}
+              </div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "job_title",
+      header: "Applied For",
+      enableSorting: true,
+      enableColumnFilter: true,
+      cell: ({ row }) => {
+        const application = row.original;
+        return (
+          <div className="hidden md:table-cell !whitespace-break-spaces">
+            <span className="">{application.job_title}</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "source",
+      header: "Source",
+      enableSorting: true,
+      enableColumnFilter: true,
+      cell: ({ row }) => {
+        const application = row.original;
+        return (
+          <div className="hidden sm:table-cell">
+            {application.source ? application.source : "N/A"}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "applied_date",
+      header: "Applied Date",
+      enableSorting: true,
+      enableColumnFilter: true,
+      cell: ({ row }) => {
+        const application = row.original;
+        return (
+          <div className="hidden sm:flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-gray-500" />
+            {formatDate(application.applied_date)}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "suitable_roles",
+      header: "Suitable Roles",
+      enableSorting: false,
+      enableColumnFilter: false,
+      cell: ({ row }) => {
+        const application = row.original;
+        return <div className="hidden md:block">{renderSuitableRoles(application)}</div>;
+      },
+    },
+    {
+      accessorKey: "similarity",
+      header: "Match",
+      enableSorting: true,
+      enableColumnFilter: false,
+      cell: ({ row }) => {
+        const application = row.original;
+        return (
+          <div className="hidden sm:block">
+            {renderSimilarityInfo(application)}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      enableSorting: false,
+      enableColumnFilter: true,
+      cell: ({ row }) => <StatusBadge application={row.original} />,
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Actions</div>,
+      enableSorting: false,
+      enableColumnFilter: false,
+      cell: ({ row }) => {
+        const application = row.original;
+
+        return (
+          <div className="text-center" onClick={(e) => e.stopPropagation()}>
+            {renderActionMenu(application)}
+          </div>
+        );
+      },
+    },
+  ], [renderContactInfo, renderSimilarityInfo, renderActionMenu, StatusBadge]);
+
+  // Update columns when selectedJobTitle changes
+  const columns = useMemo<ColumnDef<Application, unknown>[]>(() => {
+    if (selectedJobTitle && selectedJobTitle !== "_all") {
+      return [
+        createSelectionColumn<Application>(),
+        ...createBaseColumns(),
+      ];
+    }
+    return createBaseColumns();
+  }, [selectedJobTitle, createBaseColumns]);
+
 
   // Handle filter changes
   const handleFilterChange = async (columnId: string, value: string) => {

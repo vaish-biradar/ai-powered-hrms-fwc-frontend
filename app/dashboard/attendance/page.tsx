@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Header from "../_components/app-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ export default function AttendancePage() {
   const [status, setStatus] = useState("Present");
   const [workMode, setWorkMode] = useState("Office");
 
-  const loadEmployees = async () => {
+  const loadEmployees = useCallback(async () => {
     const res = await fetch("/api/proxy/hrms/employees");
     const data = await res.json();
     const allEmployees = Array.isArray(data) ? data : [];
@@ -71,23 +71,23 @@ export default function AttendancePage() {
     if (allEmployees.length > 0 && !employeeId) {
       setEmployeeId(allEmployees[0].id);
     }
-  };
+  }, [employeeId, role, user?.email]);
 
-  const loadAttendance = async () => {
+  const loadAttendance = useCallback(async () => {
     const query = role === 'Employee' && employeeId ? `?employee_id=${employeeId}` : '';
     const res = await fetch(`/api/proxy/hrms/attendance${query}`);
     const data = await res.json();
     setRecords(Array.isArray(data) ? data : []);
-  };
+  }, [employeeId, role]);
 
   useEffect(() => {
     loadEmployees();
-  }, [role, user?.email]);
+  }, [loadEmployees]);
 
   useEffect(() => {
     if (role === 'Employee' && !employeeId) return;
     loadAttendance();
-  }, [employeeId, role]);
+  }, [loadAttendance, employeeId, role]);
 
   const submitAttendance = async () => {
     try {

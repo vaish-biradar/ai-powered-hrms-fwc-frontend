@@ -80,12 +80,23 @@ export const sendMail = async (
     console.log('✅ [sendMail] Email sent successfully');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
     // Try to read the response body if it's a stream
     let errorDetails = null;
-    if (error?.body && typeof error.body.getReader === 'function') {
+    const detailedError =
+      typeof error === 'object' && error !== null
+        ? error as {
+            body?: { getReader?: () => { read: () => Promise<{ value?: Uint8Array; done: boolean }> } };
+            statusCode?: number;
+            code?: string;
+            requestId?: string;
+            responseBody?: { error?: unknown };
+          }
+        : {};
+    if (detailedError.body && typeof detailedError.body.getReader === 'function') {
       try {
-        const reader = error.body.getReader();
+        const reader = detailedError.body.getReader();
         const decoder = new TextDecoder();
         let result = '';
         let done = false;
@@ -101,17 +112,17 @@ export const sendMail = async (
     }
 
     console.error('❌ [sendMail] Graph API Error - Full Details:', {
-      statusCode: error?.statusCode,
-      code: error?.code,
-      requestId: error?.requestId,
-      message: error?.message,
-      graphError: error?.responseBody?.error,
+      statusCode: detailedError.statusCode,
+      code: detailedError.code,
+      requestId: detailedError.requestId,
+      message: err.message,
+      graphError: detailedError.responseBody?.error,
       parsedErrorBody: errorDetails,
       errorString: JSON.stringify(error, null, 2),
     });
     
     // Check for specific 401 errors
-    if (error?.statusCode === 401) {
+    if (detailedError.statusCode === 401) {
       console.error('🚨 [sendMail] 401 UNAUTHORIZED - Token may be invalid, expired, or missing Mail.Send permission');
       console.error('💡 [sendMail] Solution: Sign out completely and sign back in to get a fresh token');
       if (errorDetails) {
@@ -119,7 +130,7 @@ export const sendMail = async (
       }
     }
     
-    return { success: false, error };
+    return { success: false, error: err.message };
   }
 };
 

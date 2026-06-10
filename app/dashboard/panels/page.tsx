@@ -46,19 +46,13 @@ import { DataTable, FilterOption } from "@/components/ui/data-table"
 
 import Header from "../_components/app-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-type Member = {
-  id: string;
-  name: string;
-  email: string;
-  department: string;
-  role: string;
-};
+type Member = PanelMember;
 
 type InterviewPanel = {
   id: string;
   name: string;
   department: string;
-  members: Member[]; // Member IDs
+  members: Member[];
   positions: string[];
   active: boolean;
   createdAt: string;
@@ -1047,7 +1041,7 @@ export default function InterviewPanelsPage() {
                           checked={selectedMembers.some((m) => m.id === member.id)}
                           onCheckedChange={(checked) => {
                             if (checked) {
-                              setSelectedMembers((prev) => [...prev, member as unknown as Member]);
+                              setSelectedMembers((prev) => [...prev, member]);
                             } else {
                               setSelectedMembers((prev) => prev.filter((m) => m.id !== member.id));
                             }
@@ -1058,7 +1052,7 @@ export default function InterviewPanelsPage() {
                           className="flex items-center gap-2 text-sm leading-none cursor-pointer"
                         >
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={(member as any).avatar || "/placeholder.svg"} alt={member.name} />
+                            <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
                             <AvatarFallback>{member.name.slice(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col">

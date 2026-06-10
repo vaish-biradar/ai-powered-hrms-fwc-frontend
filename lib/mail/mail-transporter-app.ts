@@ -1,6 +1,31 @@
 import { Client } from "@microsoft/microsoft-graph-client";
 import { ClientSecretCredential } from "@azure/identity";
 
+interface GraphRecipient {
+  emailAddress: { address: string };
+}
+
+interface GraphMailAttachment {
+  "@odata.type": "#microsoft.graph.fileAttachment";
+  name: string;
+  contentBytes: string;
+}
+
+interface GraphMessage {
+  subject: string;
+  body: {
+    contentType: string;
+    content: string;
+  };
+  toRecipients: GraphRecipient[];
+  ccRecipients?: GraphRecipient[];
+  attachments?: GraphMailAttachment[];
+}
+
+type GraphMailRequest = {
+  message: GraphMessage;
+};
+
 // This uses Application permissions instead of delegated permissions
 // It sends emails from a service account (not the logged-in user)
 const getGraphClientWithAppPermissions = () => {
@@ -14,7 +39,7 @@ const getGraphClientWithAppPermissions = () => {
     authProvider: {
       getAccessToken: async () => {
         const token = await credential.getToken("https://graph.microsoft.com/.default");
-        return token.accessToken;
+        return token?.token ?? "";
       },
     },
   });
@@ -49,7 +74,7 @@ export const sendMailFromServiceAccount = async (
         }))
       : [];
 
-    const emailMessage: any = {
+    const emailMessage: GraphMailRequest = {
       message: {
         subject,
         body: {
@@ -80,13 +105,19 @@ export const sendMailFromServiceAccount = async (
     console.log('✅ [sendMailFromServiceAccount] Email sent successfully');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    const graphError =
+      typeof err === "object" && err !== null
+        ? err as { statusCode?: number; code?: string }
+        : {};
+
     console.error('❌ [sendMailFromServiceAccount] Error:', {
-      statusCode: error?.statusCode,
-      code: error?.code,
-      message: error?.message,
-      error: error,
+      statusCode: graphError.statusCode,
+      code: graphError.code,
+      message: err.message,
+      error: err,
     });
-    return { success: false, error };
+    return { success: false, error: err.message };
   }
 };

@@ -86,7 +86,7 @@ export async function GET() {
       hired: 0,
     };
 
-    let statsQuery: { rows: any[] } | null = null;
+    let statsQuery: { rows: Stats[] } | null = null;
 
     if (statsTableExists) {
       statsQuery = await postgresDB.query(

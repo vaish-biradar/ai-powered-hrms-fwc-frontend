@@ -28,7 +28,7 @@ export const sendMailViaSMTP = async (
     const recipients = Array.isArray(to) ? to.join(',') : to;
     const ccRecipients = cc ? (Array.isArray(cc) ? cc.join(',') : cc) : undefined;
 
-    const mailOptions: any = {
+    const mailOptions: nodemailer.SendMailOptions = {
       from: `HR FWC <${process.env.GMAIL_USERNAME}>`,
       to: recipients,
       subject,
@@ -55,11 +55,17 @@ export const sendMailViaSMTP = async (
     console.log('✅ [sendMailViaSMTP] Email sent successfully');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    const smtpError =
+      typeof err === "object" && err !== null
+        ? err as { code?: string }
+        : {};
+
     console.error('❌ [sendMailViaSMTP] Error:', {
-      message: error?.message,
-      code: error?.code,
+      message: err.message,
+      code: smtpError.code,
     });
-    return { success: false, error };
+    return { success: false, error: err.message };
   }
 };

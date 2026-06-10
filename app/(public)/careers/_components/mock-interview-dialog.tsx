@@ -2,6 +2,39 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+
+type SpeechRecognitionResultAlternative = {
+  transcript: string;
+};
+
+type SpeechRecognitionResult = {
+  isFinal: boolean;
+  0?: SpeechRecognitionResultAlternative;
+};
+
+type SpeechRecognitionResultList = {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+};
+
+type SpeechRecognitionEvent = {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+};
+
+type SpeechRecognitionInstance = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onstart?: () => void;
+  onerror?: (event: unknown) => void;
+  onend?: () => void;
+  onresult?: (event: SpeechRecognitionEvent) => void;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,7 +60,7 @@ export function MockInterviewDialog({ open, onOpenChange, selectedJob, resumeId 
   const [isRecording, setIsRecording] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const recordingBaseMessageRef = useRef("");
   const recognizedFinalTextRef = useRef("");
   const resolvedJdId = selectedJob?.jd_id || selectedJob?.id || "";
@@ -44,7 +77,7 @@ export function MockInterviewDialog({ open, onOpenChange, selectedJob, resumeId 
 
   const isSpeechRecognitionAvailable =
     typeof window !== "undefined" &&
-    ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+    (("SpeechRecognition" in window) || ("webkitSpeechRecognition" in window));
 
   const speakText = (text: string) => {
     if (!voiceEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -71,8 +104,16 @@ export function MockInterviewDialog({ open, onOpenChange, selectedJob, resumeId 
       return;
     }
 
-    const SpeechRecognitionCtor =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const win = window as unknown as {
+      SpeechRecognition?: SpeechRecognitionConstructor;
+      webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    };
+    const SpeechRecognitionCtor = win.SpeechRecognition || win.webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) {
+      toast.error("Voice input is not supported in this browser.");
+      return;
+    }
+
     const recognition = new SpeechRecognitionCtor();
     recognitionRef.current = recognition;
     recognition.lang = "en-US";
@@ -92,7 +133,7 @@ export function MockInterviewDialog({ open, onOpenChange, selectedJob, resumeId 
       setIsRecording(false);
       setMessage((prev) => prev.trim());
     };
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       let interimText = "";
       let finalChunk = "";
 

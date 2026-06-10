@@ -97,10 +97,16 @@ https://www.fwc.co.in
     });
 
     return NextResponse.json({ success: true, message: "Feedback email sent successfully" });
-  } catch (error: any) {
-    console.error("[mock-interview-feedback] Email sending error:", error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error("[mock-interview-feedback] Email sending error:", err);
 
-    if (error?.code === "EAUTH" || error?.responseCode === 535) {
+    const smtpError =
+      typeof err === "object" && err !== null
+        ? err as { code?: string; responseCode?: number }
+        : {};
+
+    if (smtpError.code === "EAUTH" || smtpError.responseCode === 535) {
       return NextResponse.json(
         {
           success: false,
@@ -112,7 +118,7 @@ https://www.fwc.co.in
     }
 
     return NextResponse.json(
-      { success: false, error: error?.message || "Failed to send feedback email" },
+      { success: false, error: err.message || "Failed to send feedback email" },
       { status: 500 }
     );
   }

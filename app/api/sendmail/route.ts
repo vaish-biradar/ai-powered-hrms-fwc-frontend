@@ -20,7 +20,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await req.json();
+    const body = await req.json() as {
+      name: string;
+      email: string;
+      company?: string;
+      message: string;
+    };
 
     if (!body.name || !body.email || !body.message) {
       return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
@@ -51,10 +56,16 @@ ${message}
     await transporter.sendMail(mailOptions);
 
     return NextResponse.json({ success: true, message: "Email sent successfully!" });
-  } catch (error: any) {
-    console.error("Email sending error:", error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error("Email sending error:", err);
 
-    if (error?.code === "EAUTH" || error?.responseCode === 535) {
+    const smtpError =
+      typeof err === "object" && err !== null
+        ? err as { code?: string; responseCode?: number }
+        : {};
+
+    if (smtpError.code === "EAUTH" || smtpError.responseCode === 535) {
       return NextResponse.json(
         {
           success: false,
@@ -66,7 +77,7 @@ ${message}
     }
 
     return NextResponse.json(
-      { success: false, error: error?.message || "Failed to send email" },
+      { success: false, error: err.message || "Failed to send email" },
       { status: 500 }
     );
   }

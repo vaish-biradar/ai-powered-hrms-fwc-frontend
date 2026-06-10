@@ -49,8 +49,9 @@ export async function POST(req: Request) {
       console.error('❌ [contact-candidate] sendMail failed:', result.error);
       return NextResponse.json({ error: "Failed to send email", details: result.error }, { status: 500 });
     }
-  } catch (error: any) {
-    console.error('❌ [contact-candidate] Error:', error?.message);
-    return NextResponse.json({ error: "Internal Server Error", details: error?.message }, { status: 500 });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('❌ [contact-candidate] Error:', err.message);
+    return NextResponse.json({ error: "Internal Server Error", details: err.message }, { status: 500 });
   }
 }
