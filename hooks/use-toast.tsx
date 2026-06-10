@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'; // Assuming you have the cn utility from shadc
 import React from 'react';
 import { AlertCircle, CheckCircle, Info, X, AlertTriangle } from "lucide-react";
 
-// Toast variants
+// Toast variant
 type ToastVariant = 'default' | 'success' | 'error' | 'warning' | 'info';
 
 // Toast position
