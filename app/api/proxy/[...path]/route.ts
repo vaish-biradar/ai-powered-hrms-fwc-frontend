@@ -47,7 +47,7 @@ async function handleRequest(req: NextRequest, context: { params: { path?: strin
   }
 
   try {
-    const backendBaseUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+    const backendBaseUrl = process.env.BACKEND_URL || 'https://fwc-backend-app-a0bzb9e9bahufacv.eastus-01.azurewebsites.net';
     const backendUrl = `${backendBaseUrl}/${backendPath}`;
 
     const headers = new Headers({

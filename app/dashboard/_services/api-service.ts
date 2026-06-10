@@ -198,7 +198,7 @@ class ApiService {
     }
 
     async streamCandidateAnalysis(resumeId: string, jdId: string, onChunk: (chunk: string) => void): Promise<void> {
-        const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
+        const backendUrl = process.env.BACKEND_URL || "https://fwc-backend-app-a0bzb9e9bahufacv.eastus-01.azurewebsites.net";
         const response = await fetch(
             `${backendUrl}/analysis/hr`,
             {
